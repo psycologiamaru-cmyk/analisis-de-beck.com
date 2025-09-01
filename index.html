@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Plataforma de Apoyo Psicológico</title>
+  <style>
+    /* === REINICIO Y BASE === */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #e9f2ff;
+      color: #333;
+      line-height: 1.6;
+    }
+
+    /* === ENCABEZADO === */
+    header {
+      background-color: #2a4d8f;
+      color: white;
+      padding: 20px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo {
+      width: 50px;
+      height: 50px;
+      object-fit: contain;
+    }
+
+    /* === CONTENEDOR PRINCIPAL === */
+    .container {
+      max-width: 900px;
+      margin: 30px auto;
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h2 {
+      color: #2a4d8f;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+
+    h3 {
+      color: #2a4d8f;
+      margin-top: 25px;
+    }
+
+    p {
+      margin-bottom: 15px;
+      font-size: 16px;
+    }
+
+    ul {
+      margin: 15px 0;
+      padding-left: 20px;
+    }
+
+    li {
+      margin: 8px 0;
+    }
+
+    /* === BOTONES === */
+    .button {
+      display: inline-block;
+      margin: 20px 10px;
+      padding: 15px 30px;
+      background-color: #2a4d8f;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 18px;
+      transition: background 0.3s;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .button:hover {
+      background-color: #1c3570;
+    }
+
+    /* === BIOGRAFÍA RESPONSIVA === */
+    .bio-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 40px;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .bio-text {
+      flex: 1 1 60%;
+      text-align: center;
+      padding: 0 20px;
+    }
+
+    .bio-text h2 {
+      font-size: 22px;
+      margin-bottom: 15px;
+    }
+
+    .bio-text p {
+      font-size: 16px;
+      line-height: 1.7;
+    }
+
+    .bio-image {
+      flex: 1 1 35%;
+      text-align: center;
+      padding: 10px;
+    }
+
+    .bio-image img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    /* === ENCUESTA FINAL === */
+    .encuesta-container {
+      text-align: center;
+      margin-top: 50px;
+      padding: 20px;
+      background-color: #f0f7ff;
+      border-radius: 10px;
+      border: 2px dashed #2a4d8f;
+    }
+
+    .encuesta-link {
+      display: inline-block;
+      margin-top: 15px;
+      padding: 12px 25px;
+      background-color: #2a4d8f;
+      color: white;
+      text-decoration: none;
+      font-size: 18px;
+      font-weight: bold;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+    }
+
+    .encuesta-link:hover {
+      background-color: #1c3570;
+      transform: translateY(-2px);
+    }
+
+    /* === FOOTER === */
+    footer {
+      text-align: center;
+      font-size: 14px;
+      color: #777;
+      margin-top: 60px;
+      padding-bottom: 20px;
+    }
+
+    /* === RESPONSIVE: Tablets y móviles === */
+    @media (max-width: 768px) {
+      header {
+        padding: 15px;
+      }
+
+      .logo {
+        width: 40px;
+        height: 40px;
+      }
+
+      .container {
+        margin: 20px;
+        padding: 20px;
+      }
+
+      .button {
+        padding: 12px 24px;
+        font-size: 16px;
+      }
+
+      .bio-container {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .bio-text, .bio-image {
+        flex: 1 1 100%;
+        padding: 10px;
+      }
+
+      .bio-text h2 {
+        font-size: 20px;
+      }
+
+      .encuesta-link {
+        font-size: 16px;
+        padding: 10px 20px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      header h1 {
+        font-size: 18px;
+      }
+
+      .button {
+        padding: 10px 20px;
+        font-size: 14px;
+      }
+
+      .bio-text p {
+        font-size: 15px;
+        line-height: 1.6;
+      }
+
+      .encuesta-link {
+        font-size: 14px;
+        padding: 8px 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ENCABEZADO -->
+  <header>
+    <img src="https://cdn-icons-png.flaticon.com/512/3050/3050525.png" alt="Logo" class="logo" />
+    <strong>Plataforma de Apoyo Psicológico Estudiantil</strong>
+  </header>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <div class="container">
+    <h2>Bienvenido/a a la plataforma de evaluación emocional para estudiantes</h2>
+    <p>Este espacio ha sido diseñado para ayudarte a identificar si presentas síntomas relacionados con <strong>ansiedad</strong> o <strong>depresión</strong> mediante herramientas de evaluación psicológica.</p>
+    
+    <a href="evaluacion_salud_mental_completo.html" class="button" target="_blank">Regístrate</a>
+    <a href="evaluacion_salud_mental_completo_admin.html" class="button">Administrador</a>
+
+    <h3>Instrumentos disponibles:</h3>
+    <ul>
+      <li><strong>Inventario de Depresión de Beck (BDI)</strong></li>
+      <li><strong>Inventario de Ansiedad de Beck (BAI)</strong></li>
+    </ul>
+    <p>Cada prueba está validada científicamente y sus resultados serán tratados con estricta confidencialidad.</p>
+
+    <!-- BIOGRAFÍA RESPONSIVA -->
+    <div class="bio-container">
+      <div class="bio-text">
+        <h2>María Eugenia López Gómez</h2>
+        <p>
+          María Eugenia López Gómez es psicóloga especializada en evaluación clínica y psicodiagnóstico, 
+          con amplia experiencia en el acompañamiento emocional de adolescentes y adultos. 
+          A lo largo de su trayectoria ha trabajado en contextos educativos, brindando orientación psicológica 
+          individual y grupal, con un enfoque centrado en el bienestar emocional y la prevención de riesgos psicosociales.
+        </p>
+        <br>
+        <p>
+          Su labor se ha destacado en la aplicación e interpretación de pruebas psicométricas reconocidas, 
+          como el Inventario de Depresión de Beck (BDI) y el Inventario de Ansiedad de Beck (BAI), las cuales utiliza como 
+          herramientas clave para detectar y atender problemáticas emocionales con sensibilidad y profesionalismo.
+        </p>
+        <br>
+        <p>
+          Además, ha participado activamente en el desarrollo de estrategias para la promoción de la salud mental en entornos escolares.
+        </p>
+      </div>
+
+      <div class="bio-image">
+        <!-- Cambia la ruta de la imagen si estás en un entorno web real -->
+        <img src="maria_eugenia.png" alt="María Eugenia López Gómez" />
+      </div>
+    </div>
+    <!-- FIN BIOGRAFÍA -->
+
+    <!-- ENCUESTA FINAL -->
+    <div class="encuesta-container">
+      <h3>¿Deseas evaluar tu estado emocional?</h3>
+      <p>Participa en nuestra encuesta personalizada.</p>
+      <a href="https://forms.gle/SCiTqc11zW8Urzb28" class="encuesta-link" target="_blank">Presione aquí para responder la encuesta</a>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    🛡️ La información que compartas será confidencial y solo utilizada con fines de orientación.
+ 	CREADO POR:
+		Mario Montiel Zapien,
+		 Armando Catellanos Muños
+</footer>
+
+
+</body>
+</html>
