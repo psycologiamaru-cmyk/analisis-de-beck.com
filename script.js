@@ -194,9 +194,11 @@ Interpretación: ${nivelBAI}${orientacion}`;
   fetch(url)
     .then(res => res.json())
     .then(data => {
+      // Aseguramos que resultados es un array
       const resultados = Array.isArray(data.resultados) ? data.resultados : [];
       resultados.push(resultado);
 
+      // Enviamos solo { "resultados": [...] }
       return fetch(url, {
         method: "PUT",
         headers: {
