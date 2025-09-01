@@ -1,13 +1,13 @@
 // === CONFIGURACIÓN DE GITHUB ===
-const GITHUB_USER = "psycologiamaru-cmyk";           // Tu usuario de GitHub
-const GITHUB_REPO = "analisis-de-beck.com";         // Nombre de tu repositorio
-const GITHUB_FILE = "resultados.csv";               // Archivo CSV
-const GITHUB_TOKEN = "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"; // Tu token personal
+const GITHUB_USER = "psycologiamaru-cmyk";           // Tu usuario
+const GITHUB_REPO = "analisis-de-beck.com";         // Tu repositorio
+const GITHUB_FILE = "resultados.json";              // Archivo JSON
+const GITHUB_TOKEN = "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"; // Tu token
 
 // URL pública para leer (jsDelivr)
 const URL_PUBLICA = `https://cdn.jsdelivr.net/gh/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_FILE}`;
 
-// URL de la API de GitHub para leer/escribir
+// URL de la API para leer/escribir
 const URL_API = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${GITHUB_FILE}`;
 
 // === PREGUNTAS Y TÍTULOS BDI ===
@@ -72,13 +72,11 @@ function comenzar() {
 
   if (!nombre1) return alert("Por favor ingresa tu primer nombre.");
   if (!apellido1) return alert("Por favor ingresa tu primer apellido.");
-  if (!correo || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) return alert("Por favor ingresa un correo válido.");
+  if (!correo || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) return alert("Correo inválido.");
 
-  const nombreCompleto = `${nombre1} ${nombre2} ${apellido1} ${apellido2}`.replace(/\s+/g, ' ').trim();
-
-  window.datosAlumno = { 
-    nombre: nombreCompleto,
-    correo: correo 
+  window.datosAlumno = {
+    nombre: `${nombre1} ${nombre2} ${apellido1} ${apellido2}`.replace(/\s+/g, ' ').trim(),
+    correo
   };
 
   cargarPreguntasBDI();
@@ -104,7 +102,7 @@ function cargarPreguntasBAI() {
   preguntasBAI.forEach((texto, i) => {
     let html = `<div class='question'><p><strong>${i+1}. ${texto}</strong></p>`;
     nivelesBAI.forEach((nivel, j) => {
-      html += `<label><input type='radio' name='bai${i}' value='${j}'> ${j} ${nivel}</label><br>`;
+      html += `<label><input type='radio' name='bai${i}' value='${j}'> ${nivel}</label><br>`;
     });
     html += `</div>`;
     bai.innerHTML += html;
@@ -123,7 +121,7 @@ function enviarBDI() {
   mostrar("evaluacionBAI");
 }
 
-// === GUARDAR EN CSV EN GITHUB (CREA O ACTUALIZA) ===
+// === GUARDAR EN GITHUB (JSON) ===
 async function enviarBAI() {
   const respuestasBAI = [];
   for (let i = 0; i < preguntasBAI.length; i++) {
@@ -156,41 +154,41 @@ Interpretación: ${nivelBAI}${orientacion}`;
 
   document.getElementById("textoResultado").textContent = texto;
 
+  const resultado = {
+    nombre: window.datosAlumno.nombre,
+    correo: window.datosAlumno.correo,
+    fecha: new Date().toLocaleString("es-ES"),
+    totalBDI,
+    totalBDI_raw: respuestasBDI,
+    totalBAI,
+    totalBAI_raw: respuestasBAI
+  };
+
   try {
-    // Intentar leer el archivo CSV desde GitHub
+    // Leer datos actuales
+    let resultados = [];
+    let sha = undefined;
+
     const res = await fetch(URL_API, {
       headers: { 'Authorization': `token ${GITHUB_TOKEN}` }
     });
 
-    let contenidoActual = "Nombre,Correo,Fecha,TotalBDI,TotalBAI,RespuestasBDI,RespuestasBAI\n";
-    let sha = undefined;
-
     if (res.ok) {
       const data = await res.json();
-      contenidoActual = atob(data.content); // Decodificar de base64
+      resultados = data.content ? JSON.parse(atob(data.content)) : { resultados: [] };
+      resultados = Array.isArray(resultados.resultados) ? resultados.resultados : [];
       sha = data.sha;
     }
-    // Si no existe, se creará con el encabezado
 
-    // Crear nueva fila CSV
-    const fila = [
-      `"${window.datosAlumno.nombre.replace(/"/g, '""')}"`,
-      `"${window.datosAlumno.correo.replace(/"/g, '""')}"`,
-      `"${new Date().toLocaleString("es-ES").replace(/"/g, '""')}"`,
-      totalBDI,
-      totalBAI,
-      `"${respuestasBDI.join(';')}"`,
-      `"${respuestasBAI.join(';')}"`
-    ].join(",");
+    // Añadir nuevo resultado
+    resultados.push(resultado);
 
-    const nuevoContenido = contenidoActual + fila + "\n";
-
-    // Codificar a Base64 correctamente
+    // Codificar contenido
+    const content = JSON.stringify({ resultados }, null, 2);
     const encoder = new TextEncoder();
-    const bytes = encoder.encode(nuevoContenido);
-    const base64Content = btoa(String.fromCharCode(...bytes));
+    const base64Content = btoa(String.fromCharCode(...encoder.encode(content)));
 
-    // Guardar en GitHub (PUT)
+    // Guardar en GitHub
     await fetch(URL_API, {
       method: 'PUT',
       headers: {
@@ -198,9 +196,9 @@ Interpretación: ${nivelBAI}${orientacion}`;
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        message: `Nuevo resultado: ${window.datosAlumno.nombre}`,
+        message: `Nuevo resultado: ${resultado.nombre}`,
         content: base64Content,
-        sha // será undefined si es nuevo → GitHub lo crea
+        sha
       })
     });
 
@@ -222,7 +220,7 @@ function descargarPDF() {
   doc.save(`resultado_${nombreArchivo}.pdf`);
 }
 
-// === ADMIN: CARGAR CSV Y MOSTRAR ===
+// === ADMIN: CARGAR Y MOSTRAR ===
 async function accederAdmin() {
   const usuario = document.getElementById("usuarioAdmin").value.trim();
   const clave = document.getElementById("claveAdmin").value.trim();
@@ -237,68 +235,58 @@ async function accederAdmin() {
 
 async function cargarResultadosAdmin() {
   const tabla = document.getElementById("tablaAdmin");
-  tabla.innerHTML = "<tr><td colspan='7'>Cargando desde CSV...</td></tr>";
+  tabla.innerHTML = "<tr><td colspan='7'>Cargando desde GitHub...</td></tr>";
 
   try {
     const response = await fetch(URL_PUBLICA);
-    if (!response.ok) throw new Error("No se pudo cargar el CSV");
+    if (!response.ok) throw new Error("No se pudo cargar");
 
-    const texto = await response.text();
-    const lineas = texto.trim().split("\n");
+    const data = await response.json();
+    const resultados = Array.isArray(data.resultados) ? data.resultados : [];
 
-    if (lineas.length <= 1) {
+    tabla.innerHTML = "";
+
+    if (resultados.length === 0) {
       tabla.innerHTML = "<tr><td colspan='7'>No hay resultados registrados.</td></tr>";
       return;
     }
 
-    // Eliminar encabezado
-    const filas = lineas.slice(1);
+    resultados.slice().reverse().forEach(res => {
+      const nivelBDI = res.totalBDI < 14 ? "Sin síntomas" :
+                      res.totalBDI < 20 ? "Leve" :
+                      res.totalBDI < 29 ? "Moderado" : "Grave";
 
-    tabla.innerHTML = "";
+      const nivelBAI = res.totalBAI <= 21 ? "Sin síntomas" :
+                      res.totalBAI <= 35 ? "Moderado" : "Grave";
 
-    filas.reverse().forEach(linea => {
-      const campos = linea.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
-      if (campos.length < 7) return;
-
-      const [nombre, correo, fecha, totalBDI, totalBAI] = campos;
-
-      const nivelBDI = parseInt(totalBDI) < 14 ? "Sin síntomas" :
-                      parseInt(totalBDI) < 20 ? "Leve" :
-                      parseInt(totalBDI) < 29 ? "Moderado" : "Grave";
-
-      const nivelBAI = parseInt(totalBAI) <= 21 ? "Sin síntomas" :
-                      parseInt(totalBAI) <= 35 ? "Moderado" : "Grave";
-
-      const colorBDI = parseInt(totalBDI) >= 29 ? 'red' : parseInt(totalBDI) >= 20 ? 'orange' : 'green';
-      const colorBAI = parseInt(totalBAI) > 35 ? 'red' : parseInt(totalBAI) > 21 ? 'orange' : 'green';
+      const colorBDI = res.totalBDI >= 29 ? 'red' : res.totalBDI >= 20 ? 'orange' : 'green';
+      const colorBAI = res.totalBAI > 35 ? 'red' : res.totalBAI > 21 ? 'orange' : 'green';
 
       const fila = document.createElement("tr");
       fila.innerHTML = `
-        <td>${nombre.replace(/"/g, '')}</td>
-        <td>${correo.replace(/"/g, '')}</td>
-        <td>${fecha.replace(/"/g, '')}</td>
-        <td>${totalBAI} (${nivelBAI})</td>
-        <td>${totalBDI} (${nivelBDI})</td>
+        <td>${res.nombre}</td>
+        <td>${res.correo}</td>
+        <td>${res.fecha}</td>
+        <td>${res.totalBAI} (${nivelBAI})</td>
+        <td>${res.totalBDI} (${nivelBDI})</td>
         <td style="text-align: left; padding: 8px; font-size: 13px;">
-          <strong style="color: ${colorBDI};">Depresión:</strong> ${nivelBDI} (${totalBDI}/84)<br>
-          <strong style="color: ${colorBAI};">Ansiedad:</strong> ${nivelBAI} (${totalBAI}/66)
+          <strong style="color: ${colorBDI};">Depresión:</strong> ${nivelBDI} (${res.totalBDI}/84)<br>
+          <strong style="color: ${colorBAI};">Ansiedad:</strong> ${nivelBAI} (${res.totalBAI}/66)
         </td>
-        <td><button onclick="alert('El usuario descarga su propio PDF')">PDF</button></td>
+        <td><button onclick="alert('El usuario descarga su PDF al finalizar')">PDF</button></td>
       `;
       tabla.appendChild(fila);
     });
   } catch (err) {
     tabla.innerHTML = "<tr><td colspan='7'>Error al cargar datos.</td></tr>";
-    console.error("Error al cargar CSV:", err);
+    console.error("Error:", err);
   }
 }
 
 function filtrarResultados() {
   const filtro = document.getElementById("buscadorAdmin").value.toLowerCase();
-  const filas = document.querySelectorAll("#tablaAdmin tr");
-  filas.forEach(fila => {
-    const texto = fila.textContent.toLowerCase();
-    fila.style.display = texto.includes(filtro) ? "" : "none";
+  document.querySelectorAll("#tablaAdmin tr").forEach(fila => {
+    fila.style.display = fila.textContent.toLowerCase().includes(filtro) ? "" : "none";
   });
 }
 
@@ -309,10 +297,7 @@ function cerrarSesion() {
 }
 
 // === ONLOAD ===
-window.onload = function () {
-  if (document.getElementById("inicio")) {
-    mostrar("inicio");
-  } else if (document.getElementById("adminLogin")) {
-    mostrar("adminLogin");
-  }
+window.onload = () => {
+  if (document.getElementById("inicio")) mostrar("inicio");
+  else if (document.getElementById("adminLogin")) mostrar("adminLogin");
 };
