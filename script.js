@@ -142,7 +142,7 @@ function enviarBDI() {
   mostrar("evaluacionBAI");
 }
 
-// === FUNCIÓN: enviarBAI - GUARDA EN LA NUBE (respetando { "record": { "resultados": [] } }) ===
+// === FUNCIÓN: enviarBAI - GUARDA EN LA NUBE (con URL completa) ===
 function enviarBAI() {
   const respuestas = [];
   for (let i = 0; i < preguntasBAI.length; i++) {
@@ -186,9 +186,8 @@ Interpretación: ${nivelBAI}${orientacion}`;
     totalBAI_raw: respuestas
   };
 
-  // === CONFIGURACIÓN DE JSONBIN ===
-  const binId = "68b5e1ad43b1c97be9336b10";
-  const url = `https://api.jsonbin.io/v3/b/${binId}`;
+  // === URL COMPLETA, SIN binId ===
+  const url = `https://api.jsonbin.io/v3/b/68b5e1ad43b1c97be9336b10`;
   const X_MASTER_KEY = "$2a$10$SeroZfFrIPx4AMKeFOHst./J/g9iWGGeOOu2PkMHKVcs6yRf.UKDK";
 
   fetch(url)
@@ -248,15 +247,15 @@ function accederAdmin() {
   }
 }
 
-// === FUNCION: cargarResultadosAdmin - LEE DE LA NUBE (respetando { "record": { "resultados": [] } }) ===
+// === FUNCION: cargarResultadosAdmin - LEE DE LA NUBE (con URL completa) ===
 async function cargarResultadosAdmin() {
   const tabla = document.getElementById("tablaAdmin");
   if (!tabla) return;
 
   tabla.innerHTML = "<tr><td colspan='7'>Cargando desde la nube...</td></tr>";
 
-  const binId = "68b5e1ad43b1c97be9336b10";
-  const url = `https://api.jsonbin.io/v3/b/${binId}`;
+  // === URL COMPLETA, SIN binId ===
+  const url = `https://api.jsonbin.io/v3/b/68b5e1ad43b1c97be9336b10`;
 
   try {
     const res = await fetch(url);
@@ -319,7 +318,7 @@ function cerrarSesion() {
   document.getElementById("claveAdmin").value = "";
 }
 
-// === FUNCION: descargarPDFAdmin - PDF desde la nube ===
+// === FUNCION: descargarPDFAdmin - PDF desde la nube (con URL completa) ===
 function descargarPDFAdmin(index) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({
@@ -327,8 +326,8 @@ function descargarPDFAdmin(index) {
     unit: 'mm'
   });
 
-  const binId = "68b5e1ad43b1c97be9336b10";
-  const url = `https://api.jsonbin.io/v3/b/${binId}`;
+  // === URL COMPLETA, SIN binId ===
+  const url = `https://api.jsonbin.io/v3/b/68b5e1ad43b1c97be9336b10`;
 
   fetch(url)
     .then(res => res.json())
