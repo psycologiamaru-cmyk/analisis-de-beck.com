@@ -142,7 +142,7 @@ function enviarBDI() {
   mostrar("evaluacionBAI");
 }
 
-// === FUNCIÓN CORREGIDA: enviarBAI - GUARDA EN JSONBIN CON CLAVE ===
+// === FUNCIÓN CORREGIDA: enviarBAI - GUARDA EN JSONBIN ===
 function enviarBAI() {
   const respuestas = [];
   for (let i = 0; i < preguntasBAI.length; i++) {
@@ -186,41 +186,33 @@ Interpretación: ${nivelBAI}${orientacion}`;
     totalBAI_raw: respuestas
   };
 
-  // === CONFIGURACIÓN DE JSONBIN ===
+  // === CONFIGURACIÓN FINAL ===
   const binId = "68b5e1ad43b1c97be9336b10";
   const url = `https://api.jsonbin.io/v3/b/${binId}`;
-  const X_MASTER_KEY = "$2a$10$SeroZfFrIPx4AMKeFOHst./J/g9iWGGeOOu2PkMHKVcs6yRf.UKDK"; // Tu clave
+  const X_MASTER_KEY = "$2a$10$SeroZfFrIPx4AMKeFOHst./J/g9iWGGeOOu2PkMHKVcs6yRf.UKDK";
 
-  // Leer datos actuales
   fetch(url)
-    .then(res => {
-      if (!res.ok) throw new Error("Error de red o acceso");
-      return res.json();
-    })
+    .then(res => res.json())
     .then(data => {
-      const resultados = Array.isArray(data.record.resultados) ? data.record.resultados : [];
+      // Leer resultados del objeto "record"
+      const resultados = Array.isArray(data.record?.resultados) ? data.record.resultados : [];
       resultados.push(resultado);
 
-      // Guardar con cabecera de autenticación
+      // Enviar con la misma estructura: { "record": { "resultados": [...] } }
       return fetch(url, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           "X-Master-Key": X_MASTER_KEY
         },
-        body: JSON.stringify({ resultados })
+        body: JSON.stringify({ record: { resultados } })
       });
     })
-    .then(res => {
-      if (res.ok) {
-        console.log("✅ Éxito: Resultado guardado en JSONBin");
-      } else {
-        res.text().then(text => console.error("❌ Error en PUT:", text));
-      }
+    .then(() => {
       mostrar("resultado");
     })
     .catch(err => {
-      console.error("🚨 Error al conectar con JSONBin:", err);
+      console.error("Error al guardar:", err);
       mostrar("resultado");
       alert("No se pudo guardar en línea, pero puedes ver tu resultado.");
     });
@@ -261,17 +253,17 @@ async function cargarResultadosAdmin() {
   const tabla = document.getElementById("tablaAdmin");
   if (!tabla) return;
 
-  tabla.innerHTML = "<tr><td colspan='7'>Cargando datos desde servidor...</td></tr>";
+  tabla.innerHTML = "<tr><td colspan='7'>Cargando datos...</td></tr>";
 
   const binId = "68b5e1ad43b1c97be9336b10";
   const url = `https://api.jsonbin.io/v3/b/${binId}`;
 
   try {
     const res = await fetch(url);
-    if (!res.ok) throw new Error("Servidor no responde");
+    if (!res.ok) throw new Error("Error de red");
 
     const data = await res.json();
-    const resultados = Array.isArray(data.record.resultados) ? data.record.resultados : [];
+    const resultados = Array.isArray(data.record?.resultados) ? data.record.resultados : [];
 
     tabla.innerHTML = "";
 
@@ -307,8 +299,8 @@ async function cargarResultadosAdmin() {
       tabla.appendChild(fila);
     });
   } catch (error) {
-    tabla.innerHTML = `<tr><td colspan='7'>Error al cargar: ${error.message}</td></tr>`;
-    console.error("Error al cargar desde JSONBin:", error);
+    tabla.innerHTML = `<tr><td colspan='7'>Error: ${error.message}</td></tr>`;
+    console.error("Error al cargar:", error);
   }
 }
 
@@ -327,6 +319,7 @@ function cerrarSesion() {
   document.getElementById("claveAdmin").value = "";
 }
 
+// === CORREGIDO: descargarPDFAdmin - Lee desde JSONBin ===
 function descargarPDFAdmin(index) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({
@@ -334,64 +327,75 @@ function descargarPDFAdmin(index) {
     unit: 'mm'
   });
 
-  const resultados = JSON.parse(localStorage.getItem("resultados") || "[]");
-  const res = resultados[index];
-  if (!res) return alert("Resultado no encontrado.");
+  const binId = "68b5e1ad43b1c97be9336b10";
+  const url = `https://api.jsonbin.io/v3/b/${binId}`;
 
-  let y = 20;
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(14);
-  doc.text(`Resultado de: ${res.nombre}`, 15, y); y += 10;
+  fetch(url)
+    .then(res => res.json())
+    .then(data => {
+      const resultados = Array.isArray(data.record?.resultados) ? data.record.resultados : [];
+      const res = resultados[index];
+      if (!res) return alert("Resultado no encontrado.");
 
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(12);
-  doc.text(`Correo: ${res.correo}`, 15, y); y += 8;
-  doc.text(`Fecha: ${res.fecha}`, 15, y); y += 12;
+      let y = 20;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(14);
+      doc.text(`Resultado de: ${res.nombre}`, 15, y); y += 10;
 
-  doc.setFont("helvetica", "bold");
-  doc.text("Inventario de Depresión de Beck (BDI)", 15, y); y += 8;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(12);
+      doc.text(`Correo: ${res.correo}`, 15, y); y += 8;
+      doc.text(`Fecha: ${res.fecha}`, 15, y); y += 12;
 
-  doc.setFont("helvetica", "normal");
-  res.totalBDI_raw.forEach((val, i) => {
-    const pregunta = `${i+1}. ${titulosBDI[i]}: ${preguntasBDI[i][val]}`;
-    const lines = doc.splitTextToSize(pregunta, 170);
-    lines.forEach(line => {
-      if (y > 270) {
-        doc.addPage();
-        y = 20;
-      }
-      doc.text(15, y, line);
-      y += 6;
+      doc.setFont("helvetica", "bold");
+      doc.text("Inventario de Depresión de Beck (BDI)", 15, y); y += 8;
+
+      doc.setFont("helvetica", "normal");
+      res.totalBDI_raw.forEach((val, i) => {
+        const pregunta = `${i+1}. ${titulosBDI[i]}: ${preguntasBDI[i][val]}`;
+        const lines = doc.splitTextToSize(pregunta, 170);
+        lines.forEach(line => {
+          if (y > 270) {
+            doc.addPage();
+            y = 20;
+          }
+          doc.text(15, y, line);
+          y += 6;
+        });
+        y += 2;
+      });
+      y += 8;
+      doc.setFont("helvetica", "bold");
+      doc.text(`Total BDI: ${res.totalBDI}`, 15, y); y += 12;
+
+      doc.setFont("helvetica", "bold");
+      doc.text("Inventario de Ansiedad de Beck (BAI)", 15, y); y += 8;
+
+      doc.setFont("helvetica", "normal");
+      res.totalBAI_raw.forEach((val, i) => {
+        const pregunta = `${i+1}. ${preguntasBAI[i]}: ${nivelesBAI[val]}`;
+        const lines = doc.splitTextToSize(pregunta, 170);
+        lines.forEach(line => {
+          if (y > 270) {
+            doc.addPage();
+            y = 20;
+          }
+          doc.text(15, y, line);
+          y += 6;
+        });
+        y += 2;
+      });
+      y += 8;
+      doc.setFont("helvetica", "bold");
+      doc.text(`Total BAI: ${res.totalBAI}`, 15, y);
+
+      const nombreArchivo = res.nombre.replace(/\s/g, "_");
+      doc.save(`resultado_${nombreArchivo}.pdf`);
+    })
+    .catch(err => {
+      alert("Error al cargar el resultado.");
+      console.error(err);
     });
-    y += 2;
-  });
-  y += 8;
-  doc.setFont("helvetica", "bold");
-  doc.text(`Total BDI: ${res.totalBDI}`, 15, y); y += 12;
-
-  doc.setFont("helvetica", "bold");
-  doc.text("Inventario de Ansiedad de Beck (BAI)", 15, y); y += 8;
-
-  doc.setFont("helvetica", "normal");
-  res.totalBAI_raw.forEach((val, i) => {
-    const pregunta = `${i+1}. ${preguntasBAI[i]}: ${nivelesBAI[val]}`;
-    const lines = doc.splitTextToSize(pregunta, 170);
-    lines.forEach(line => {
-      if (y > 270) {
-        doc.addPage();
-        y = 20;
-      }
-      doc.text(15, y, line);
-      y += 6;
-    });
-    y += 2;
-  });
-  y += 8;
-  doc.setFont("helvetica", "bold");
-  doc.text(`Total BAI: ${res.totalBAI}`, 15, y);
-
-  const nombreArchivo = res.nombre.replace(/\s/g, "_");
-  doc.save(`resultado_${nombreArchivo}.pdf`);
 }
 
 // === ONLOAD ===
