@@ -1,26 +1,23 @@
+// === CONFIGURACIÓN DE GITHUB ===
+const GITHUB_USER = "psycologiamaru-cmyk";           // Tu usuario de GitHub
+const GITHUB_REPO = "analisis-de-beck.com";           // Nombre de tu repositorio
+const GITHUB_FILE = "resultados.csv";        // Archivo CSV
+const GITHUB_TOKEN = "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"; // Tu token personal
+
+// URL pública para leer (jsDelivr)
+const URL_PUBLICA = `https://cdn.jsdelivr.net/gh/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_FILE}`;
+
+// URL de la API de GitHub para leer/escribir
+const URL_API = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${GITHUB_FILE}`;
+
 // === PREGUNTAS Y TÍTULOS BDI ===
 const titulosBDI = [
-  "Tristeza",
-  "Pesimismo",
-  "Fracaso",
-  "Pérdida de Placer",
-  "Sentimientos de Culpa",
-  "Sentimientos de Castigo",
-  "Disconformidad con uno mismo.",
-  "Autocrítica",
-  "Pensamientos o Deseos Suicidas",
-  "Llanto",
-  "Agitación",
-  "Pérdida de Interés",
-  "Indecisión",
-  "Desvalorización",
-  "Pérdida de Energía",
-  "Cambios en los Hábitos de Sueño",
-  "Irritabilidad",
-  "Cambios en el Apetito",
-  "Dificultad de Concentración",
-  "Cansancio o Fatiga",
-  "Pérdida de Interés en el Sexo"
+  "Tristeza", "Pesimismo", "Fracaso", "Pérdida de Placer", "Sentimientos de Culpa",
+  "Sentimientos de Castigo", "Disconformidad con uno mismo.", "Autocrítica",
+  "Pensamientos o Deseos Suicidas", "Llanto", "Agitación", "Pérdida de Interés",
+  "Indecisión", "Desvalorización", "Pérdida de Energía", "Cambios en los Hábitos de Sueño",
+  "Irritabilidad", "Cambios en el Apetito", "Dificultad de Concentración",
+  "Cansancio o Fatiga", "Pérdida de Interés en el Sexo"
 ];
 
 const preguntasBDI = [
@@ -49,27 +46,11 @@ const preguntasBDI = [
 
 // === PREGUNTAS BAI ===
 const preguntasBAI = [
-  "Torpe o entumecido",
-  "Acalorado",
-  "Con temblor en las piernas",
-  "Incapaz de relajarse",
-  "Con temor a que ocurra lo peor",
-  "Mareado, o que se le va la cabeza",
-  "Con latidos del corazón fuertes y acelerados",
-  "Inestable",
-  "Atemorizado o asustado",
-  "Nervioso",
-  "Con sensación de bloqueo",
-  "Con temblores en las manos",
-  "Inquieto, inseguro",
-  "Con miedo a perder el control",
-  "Con sensación de ahogo",
-  "Con temor a morir",
-  "Con miedo",
-  "Con problemas digestivos",
-  "Con desvanecimientos",
-  "Con rubor facial",
-  "Con sudores, fríos o calientes"
+  "Torpe o entumecido", "Acalorado", "Con temblor en las piernas", "Incapaz de relajarse",
+  "Con temor a que ocurra lo peor", "Mareado, o que se le va la cabeza", "Con latidos del corazón fuertes y acelerados",
+  "Inestable", "Atemorizado o asustado", "Nervioso", "Con sensación de bloqueo", "Con temblores en las manos",
+  "Inquieto, inseguro", "Con miedo a perder el control", "Con sensación de ahogo", "Con temor a morir",
+  "Con miedo", "Con problemas digestivos", "Con desvanecimientos", "Con rubor facial", "Con sudores, fríos o calientes"
 ];
 
 const nivelesBAI = ["En absoluto", "Levemente", "Moderadamente", "Severamente"];
@@ -142,24 +123,23 @@ function enviarBDI() {
   mostrar("evaluacionBAI");
 }
 
-// === FUNCIÓN: enviarBAI - GUARDA EN LA NUBE (con URL completa) ===
-function enviarBAI() {
-  const respuestas = [];
+// === GUARDAR EN CSV EN GITHUB (CREA O ACTUALIZA) ===
+async function enviarBAI() {
+  const respuestasBAI = [];
   for (let i = 0; i < preguntasBAI.length; i++) {
     const r = document.querySelector(`input[name='bai${i}']:checked`);
     if (!r) return alert("Completa todas las preguntas de ansiedad.");
-    respuestas.push(parseInt(r.value));
+    respuestasBAI.push(parseInt(r.value));
   }
-  window.respuestasBAI = respuestas;
 
   const totalBDI = respuestasBDI.reduce((a, b) => a + b, 0);
-  const totalBAI = respuestas.reduce((a, b) => a + b, 0);
+  const totalBAI = respuestasBAI.reduce((a, b) => a + b, 0);
 
   const nivelBDI = totalBDI < 14 ? "Depresión mínima" : totalBDI < 20 ? "Depresión leve" : totalBDI < 29 ? "Depresión moderada" : "Depresión severa";
   const nivelBAI = totalBAI <= 21 ? "Ansiedad muy baja" : totalBAI <= 35 ? "Ansiedad moderada" : "Ansiedad severa";
 
   const orientacion = (totalBDI >= 20 || totalBAI >= 36)
-    ? "\nPuedes acercarte al área de psicopedagogía (segunda planta, al lado de coordinación) para recibir apoyo personalizado." 
+    ? "\nPuedes acercarte al área de psicopedagogía (primer edificio, primer piso, lado derecho, al lado de coordinación) para recibir apoyo personalizado."
     : "";
 
   const texto = `Nombre: ${window.datosAlumno.nombre}
@@ -183,123 +163,142 @@ Interpretación: ${nivelBAI}${orientacion}`;
     totalBDI,
     totalBDI_raw: respuestasBDI,
     totalBAI,
-    totalBAI_raw: respuestas
+    totalBAI_raw: respuestasBAI
   };
 
-  // === URL COMPLETA, SIN binId ===
-  const url = `https://api.jsonbin.io/v3/b/68b5e1ad43b1c97be9336b10`;
-  const X_MASTER_KEY = "$2a$10$SeroZfFrIPx4AMKeFOHst./J/g9iWGGeOOu2PkMHKVcs6yRf.UKDK";
-
-  fetch(url)
-    .then(res => res.json())
-    .then(data => {
-      // Extraemos resultados del objeto "record"
-      const resultados = Array.isArray(data.record?.resultados) ? data.record.resultados : [];
-      resultados.push(resultado);
-
-      // Enviamos con la misma estructura: { "record": { "resultados": [...] } }
-      return fetch(url, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Master-Key": X_MASTER_KEY
-        },
-        body: JSON.stringify({ record: { resultados } })
-      });
-    })
-    .then(() => {
-      mostrar("resultado");
-    })
-    .catch(err => {
-      console.error("Error al guardar en la nube:", err);
-      mostrar("resultado");
-      alert("No se pudo guardar en línea, pero puedes ver tu resultado.");
+  try {
+    // Intentar leer el archivo
+    const res = await fetch(URL_API, {
+      headers: { 'Authorization': `token ${GITHUB_TOKEN}` }
     });
+
+    let contenidoActual = "Nombre,Correo,Fecha,TotalBDI,TotalBAI,RespuestasBDI,RespuestasBAI\n";
+    let sha = undefined;
+
+    if (res.ok) {
+      const data = await res.json();
+      contenidoActual = atob(data.content);
+      sha = data.sha;
+    }
+
+    // Crear fila CSV
+    const fila = [
+      `"${resultado.nombre.replace(/"/g, '""')}"`,
+      `"${resultado.correo.replace(/"/g, '""')}"`,
+      `"${resultado.fecha.replace(/"/g, '""')}"`,
+      resultado.totalBDI,
+      resultado.totalBAI,
+      `"${resultado.totalBDI_raw.join(';')}"`,
+      `"${resultado.totalBAI_raw.join(';')}"`
+    ].join(",");
+
+    const nuevoContenido = contenidoActual + fila + "\n";
+
+    // Codificar correctamente
+    const encoder = new TextEncoder();
+    const bytes = encoder.encode(nuevoContenido);
+    const base64Content = btoa(String.fromCharCode(...bytes));
+
+    // Guardar en GitHub
+    await fetch(URL_API, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `token ${GITHUB_TOKEN}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        message: `Nuevo resultado: ${resultado.nombre}`,
+        content: base64Content,
+        sha
+      })
+    });
+
+    mostrar("resultado");
+  } catch (err) {
+    console.error("Error al guardar en GitHub:", err);
+    alert("No se pudo guardar en línea, pero puedes ver tu resultado.");
+    mostrar("resultado");
+  }
 }
 
 function descargarPDF() {
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({
-    format: 'a4',
-    unit: 'mm'
-  });
-
+  const doc = new jsPDF();
   const texto = document.getElementById("textoResultado").innerText;
   const lines = doc.splitTextToSize(texto, 180);
-  doc.setFont("helvetica");
-  doc.setFontSize(12);
-  doc.text(15, 20, lines);
-
+  doc.text(10, 20, lines);
   const nombreArchivo = window.datosAlumno.nombre.replace(/\s+/g, "_");
   doc.save(`resultado_${nombreArchivo}.pdf`);
 }
 
-// === PARTE DEL ADMINISTRADOR ===
-function accederAdmin() {
+// === ADMIN: CARGAR CSV Y MOSTRAR ===
+async function accederAdmin() {
   const usuario = document.getElementById("usuarioAdmin").value.trim();
   const clave = document.getElementById("claveAdmin").value.trim();
 
   if (usuario === "administradorPSY" && clave === "12345") {
     mostrar("adminPanel");
-    cargarResultadosAdmin();
+    await cargarResultadosAdmin();
   } else {
     alert("Usuario o contraseña incorrectos");
   }
 }
 
-// === FUNCION: cargarResultadosAdmin - LEE DE LA NUBE (con URL completa) ===
 async function cargarResultadosAdmin() {
   const tabla = document.getElementById("tablaAdmin");
-  if (!tabla) return;
-
-  tabla.innerHTML = "<tr><td colspan='7'>Cargando desde la nube...</td></tr>";
-
-  // === URL COMPLETA, SIN binId ===
-  const url = `https://api.jsonbin.io/v3/b/68b5e1ad43b1c97be9336b10`;
+  tabla.innerHTML = "<tr><td colspan='7'>Cargando desde CSV...</td></tr>";
 
   try {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error("Error de red");
+    const response = await fetch(URL_PUBLICA);
+    if (!response.ok) throw new Error("No se pudo cargar el CSV");
 
-    const data = await res.json();
-    const resultados = Array.isArray(data.record?.resultados) ? data.record.resultados : [];
+    const texto = await response.text();
+    const lineas = texto.trim().split("\n");
 
-    tabla.innerHTML = "";
-
-    if (resultados.length === 0) {
+    if (lineas.length <= 1) {
       tabla.innerHTML = "<tr><td colspan='7'>No hay resultados registrados.</td></tr>";
       return;
     }
 
-    resultados.slice().reverse().forEach((res, index) => {
-      const nivelBDI = res.totalBDI < 14 ? "Sin síntomas" :
-                      res.totalBDI < 20 ? "Leve" :
-                      res.totalBDI < 29 ? "Moderado" : "Grave";
+    // Eliminar encabezado
+    const filas = lineas.slice(1);
 
-      const nivelBAI = res.totalBAI <= 21 ? "Sin síntomas" :
-                      res.totalBAI <= 35 ? "Moderado" : "Grave";
+    tabla.innerHTML = "";
 
-      const colorBDI = res.totalBDI >= 29 ? 'red' : res.totalBDI >= 20 ? 'orange' : 'green';
-      const colorBAI = res.totalBAI > 35 ? 'red' : res.totalBAI > 21 ? 'orange' : 'green';
+    filas.reverse().forEach(linea => {
+      const campos = linea.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+      if (campos.length < 5) return;
+
+      const [nombre, correo, fecha, totalBDI, totalBAI] = campos;
+
+      const nivelBDI = parseInt(totalBDI) < 14 ? "Sin síntomas" :
+                      parseInt(totalBDI) < 20 ? "Leve" :
+                      parseInt(totalBDI) < 29 ? "Moderado" : "Grave";
+
+      const nivelBAI = parseInt(totalBAI) <= 21 ? "Sin síntomas" :
+                      parseInt(totalBAI) <= 35 ? "Moderado" : "Grave";
+
+      const colorBDI = parseInt(totalBDI) >= 29 ? 'red' : parseInt(totalBDI) >= 20 ? 'orange' : 'green';
+      const colorBAI = parseInt(totalBAI) > 35 ? 'red' : parseInt(totalBAI) > 21 ? 'orange' : 'green';
 
       const fila = document.createElement("tr");
       fila.innerHTML = `
-        <td>${res.nombre}</td>
-        <td>${res.correo}</td>
-        <td>${res.fecha}</td>
-        <td>${res.totalBAI} (${nivelBAI})</td>
-        <td>${res.totalBDI} (${nivelBDI})</td>
+        <td>${nombre.replace(/"/g, '')}</td>
+        <td>${correo.replace(/"/g, '')}</td>
+        <td>${fecha.replace(/"/g, '')}</td>
+        <td>${totalBAI} (${nivelBAI})</td>
+        <td>${totalBDI} (${nivelBDI})</td>
         <td style="text-align: left; padding: 8px; font-size: 13px;">
-          <strong style="color: ${colorBDI};">Depresión:</strong> ${nivelBDI} (${res.totalBDI}/63)<br>
-          <strong style="color: ${colorBAI};">Ansiedad:</strong> ${nivelBAI} (${res.totalBAI}/66)
+          <strong style="color: ${colorBDI};">Depresión:</strong> ${nivelBDI} (${totalBDI}/84)<br>
+          <strong style="color: ${colorBAI};">Ansiedad:</strong> ${nivelBAI} (${totalBAI}/66)
         </td>
-        <td><button onclick="descargarPDFAdmin(${resultados.indexOf(res)})">PDF</button></td>
+        <td><button onclick="alert('El usuario descarga su propio PDF')">PDF</button></td>
       `;
       tabla.appendChild(fila);
     });
-  } catch (error) {
-    tabla.innerHTML = `<tr><td colspan='7'>Error: ${error.message}</td></tr>`;
-    console.error("Error al cargar desde la nube:", error);
+  } catch (err) {
+    tabla.innerHTML = "<tr><td colspan='7'>Error al cargar datos.</td></tr>";
+    console.error("Error al cargar CSV:", err);
   }
 }
 
@@ -316,89 +315,6 @@ function cerrarSesion() {
   mostrar("adminLogin");
   document.getElementById("usuarioAdmin").value = "";
   document.getElementById("claveAdmin").value = "";
-}
-
-// === FUNCION: descargarPDFAdmin - PDF desde la nube (con URL completa) ===
-function descargarPDFAdmin(index) {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({
-    format: 'a4',
-    unit: 'mm'
-  });
-
-  // === URL COMPLETA, SIN binId ===
-  const url = `https://api.jsonbin.io/v3/b/68b5e1ad43b1c97be9336b10`;
-
-  fetch(url)
-    .then(res => res.json())
-    .then(data => {
-      const resultados = Array.isArray(data.record?.resultados) ? data.record.resultados : [];
-      const res = resultados[index];
-
-      if (!res) {
-        alert("Resultado no encontrado en la nube.");
-        return;
-      }
-
-      let y = 20;
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(14);
-      doc.text(`Resultado de: ${res.nombre}`, 15, y); y += 10;
-
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(12);
-      doc.text(`Correo: ${res.correo}`, 15, y); y += 8;
-      doc.text(`Fecha: ${res.fecha}`, 15, y); y += 12;
-
-      doc.setFont("helvetica", "bold");
-      doc.text("Inventario de Depresión de Beck (BDI)", 15, y); y += 8;
-
-      doc.setFont("helvetica", "normal");
-      res.totalBDI_raw.forEach((val, i) => {
-        const pregunta = `${i+1}. ${titulosBDI[i]}: ${preguntasBDI[i][val]}`;
-        const lines = doc.splitTextToSize(pregunta, 170);
-        lines.forEach(line => {
-          if (y > 270) {
-            doc.addPage();
-            y = 20;
-          }
-          doc.text(15, y, line);
-          y += 6;
-        });
-        y += 2;
-      });
-      y += 8;
-      doc.setFont("helvetica", "bold");
-      doc.text(`Total BDI: ${res.totalBDI}`, 15, y); y += 12;
-
-      doc.setFont("helvetica", "bold");
-      doc.text("Inventario de Ansiedad de Beck (BAI)", 15, y); y += 8;
-
-      doc.setFont("helvetica", "normal");
-      res.totalBAI_raw.forEach((val, i) => {
-        const pregunta = `${i+1}. ${preguntasBAI[i]}: ${nivelesBAI[val]}`;
-        const lines = doc.splitTextToSize(pregunta, 170);
-        lines.forEach(line => {
-          if (y > 270) {
-            doc.addPage();
-            y = 20;
-          }
-          doc.text(15, y, line);
-          y += 6;
-        });
-        y += 2;
-      });
-      y += 8;
-      doc.setFont("helvetica", "bold");
-      doc.text(`Total BAI: ${res.totalBAI}`, 15, y);
-
-      const nombreArchivo = res.nombre.replace(/\s/g, "_");
-      doc.save(`resultado_${nombreArchivo}.pdf`);
-    })
-    .catch(err => {
-      alert("No se pudo cargar el resultado desde la nube.");
-      console.error(err);
-    });
 }
 
 // === ONLOAD ===
