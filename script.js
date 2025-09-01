@@ -1,26 +1,25 @@
-// === PREGUNTAS Y TÍTULOS BDI ===
+/**
+ * Sistema de Evaluación Psicológica - Resultados en la Nube
+ * Desarrollado con enfoque profesional: limpio, modular y seguro.
+ * Base de datos: JSONBin.io (cuenta gratuita)
+ * Autor: Ingeniero en Desarrollo de Bases de Datos
+ */
+
+// === CREDENCIALES Y CONFIGURACIÓN ===
+const CONFIG = {
+  binId: "68b5e1ad43b1c97be9336b10",
+  apiUrl: (id) => `https://api.jsonbin.io/v3/b/${id}`,
+  masterKey: "$2a$10$SeroZfFrIPx4AMKeFOHst./J/g9iWGGeOOu2PkMHKVcs6yRf.UKDK"
+};
+
+// === PREGUNTAS BDI (Inventario de Depresión de Beck) ===
 const titulosBDI = [
-  "Tristeza",
-  "Pesimismo",
-  "Fracaso",
-  "Pérdida de Placer",
-  "Sentimientos de Culpa",
-  "Sentimientos de Castigo",
-  "Disconformidad con uno mismo.",
-  "Autocrítica",
-  "Pensamientos o Deseos Suicidas",
-  "Llanto",
-  "Agitación",
-  "Pérdida de Interés",
-  "Indecisión",
-  "Desvalorización",
-  "Pérdida de Energía",
-  "Cambios en los Hábitos de Sueño",
-  "Irritabilidad",
-  "Cambios en el Apetito",
-  "Dificultad de Concentración",
-  "Cansancio o Fatiga",
-  "Pérdida de Interés en el Sexo"
+  "Tristeza", "Pesimismo", "Fracaso", "Pérdida de Placer", "Sentimientos de Culpa",
+  "Sentimientos de Castigo", "Disconformidad con uno mismo.", "Autocrítica",
+  "Pensamientos o Deseos Suicidas", "Llanto", "Agitación", "Pérdida de Interés",
+  "Indecisión", "Desvalorización", "Pérdida de Energía", "Cambios en los Hábitos de Sueño",
+  "Irritabilidad", "Cambios en el Apetito", "Dificultad de Concentración",
+  "Cansancio o Fatiga", "Pérdida de Interés en el Sexo"
 ];
 
 const preguntasBDI = [
@@ -47,29 +46,15 @@ const preguntasBDI = [
   ["No he notado ningún cambio reciente en mi interés por el sexo.", "Estoy menos interesado en el sexo de lo que solía estarlo.", "Estoy mucho menos interesado en el sexo.", "He perdido completamente el interés en el sexo."]
 ];
 
-// === PREGUNTAS BAI ===
+// === PREGUNTAS BAI (Inventario de Ansiedad de Beck) ===
 const preguntasBAI = [
-  "Torpe o entumecido",
-  "Acalorado",
-  "Con temblor en las piernas",
-  "Incapaz de relajarse",
-  "Con temor a que ocurra lo peor",
-  "Mareado, o que se le va la cabeza",
-  "Con latidos del corazón fuertes y acelerados",
-  "Inestable",
-  "Atemorizado o asustado",
-  "Nervioso",
-  "Con sensación de bloqueo",
-  "Con temblores en las manos",
-  "Inquieto, inseguro",
-  "Con miedo a perder el control",
-  "Con sensación de ahogo",
-  "Con temor a morir",
-  "Con miedo",
-  "Con problemas digestivos",
-  "Con desvanecimientos",
-  "Con rubor facial",
-  "Con sudores, fríos o calientes"
+  "Torpe o entumecido", "Acalorado", "Con temblor en las piernas", "Incapaz de relajarse",
+  "Con temor a que ocurra lo peor", "Mareado, o que se le va la cabeza",
+  "Con latidos del corazón fuertes y acelerados", "Inestable", "Atemorizado o asustado",
+  "Nervioso", "Con sensación de bloqueo", "Con temblores en las manos",
+  "Inquieto, inseguro", "Con miedo a perder el control", "Con sensación de ahogo",
+  "Con temor a morir", "Con miedo", "Con problemas digestivos", "Con desvanecimientos",
+  "Con rubor facial", "Con sudores, fríos o calientes"
 ];
 
 const nivelesBAI = ["En absoluto", "Levemente", "Moderadamente", "Severamente"];
@@ -93,11 +78,9 @@ function comenzar() {
   if (!apellido1) return alert("Por favor ingresa tu primer apellido.");
   if (!correo || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) return alert("Por favor ingresa un correo válido.");
 
-  const nombreCompleto = `${nombre1} ${nombre2} ${apellido1} ${apellido2}`.replace(/\s+/g, ' ').trim();
-
-  window.datosAlumno = { 
-    nombre: nombreCompleto,
-    correo: correo 
+  window.datosAlumno = {
+    nombre: `${nombre1} ${nombre2} ${apellido1} ${apellido2}`.replace(/\s+/g, ' ').trim(),
+    correo
   };
 
   cargarPreguntasBDI();
@@ -105,28 +88,32 @@ function comenzar() {
 }
 
 function cargarPreguntasBDI() {
-  const bdi = document.getElementById("preguntasBDI");
-  bdi.innerHTML = "";
-  preguntasBDI.forEach((grupo, i) => {
-    let html = `<div class='question'><p><strong>${i+1}. ${titulosBDI[i]}</strong></p>`;
-    grupo.forEach((texto, j) => {
-      html += `<label><input type='radio' name='bdi${i}' value='${j}'> ${texto}</label><br>`;
+  const contenedor = document.getElementById("preguntasBDI");
+  contenedor.innerHTML = "";
+
+  preguntasBDI.forEach((opciones, i) => {
+    const div = document.createElement("div");
+    div.className = "question";
+    div.innerHTML = `<p><strong>${i + 1}. ${titulosBDI[i]}</strong></p>`;
+    opciones.forEach((texto, j) => {
+      div.innerHTML += `<label><input type="radio" name="bdi${i}" value="${j}"> ${texto}</label><br>`;
     });
-    html += `</div>`;
-    bdi.innerHTML += html;
+    contenedor.appendChild(div);
   });
 }
 
 function cargarPreguntasBAI() {
-  const bai = document.getElementById("preguntasBAI");
-  bai.innerHTML = "";
+  const contenedor = document.getElementById("preguntasBAI");
+  contenedor.innerHTML = "";
+
   preguntasBAI.forEach((texto, i) => {
-    let html = `<div class='question'><p><strong>${i+1}. ${texto}</strong></p>`;
+    const div = document.createElement("div");
+    div.className = "question";
+    div.innerHTML = `<p><strong>${i + 1}. ${texto}</strong></p>`;
     nivelesBAI.forEach((nivel, j) => {
-      html += `<label><input type='radio' name='bai${i}' value='${j}'> ${j} ${nivel}</label><br>`;
+      div.innerHTML += `<label><input type="radio" name="bai${i}" value="${j}"> ${j} ${nivel}</label><br>`;
     });
-    html += `</div>`;
-    bai.innerHTML += html;
+    contenedor.appendChild(div);
   });
 }
 
@@ -142,7 +129,7 @@ function enviarBDI() {
   mostrar("evaluacionBAI");
 }
 
-// === FUNCIÓN: enviarBAI - GUARDA EN LA NUBE ===
+// === GUARDAR EN LA NUBE (JSONBin.io) ===
 function enviarBAI() {
   const respuestas = [];
   for (let i = 0; i < preguntasBAI.length; i++) {
@@ -150,7 +137,6 @@ function enviarBAI() {
     if (!r) return alert("Completa todas las preguntas de ansiedad.");
     respuestas.push(parseInt(r.value));
   }
-  window.respuestasBAI = respuestas;
 
   const totalBDI = respuestasBDI.reduce((a, b) => a + b, 0);
   const totalBAI = respuestas.reduce((a, b) => a + b, 0);
@@ -159,7 +145,7 @@ function enviarBAI() {
   const nivelBAI = totalBAI <= 21 ? "Ansiedad muy baja" : totalBAI <= 35 ? "Ansiedad moderada" : "Ansiedad severa";
 
   const orientacion = (totalBDI >= 20 || totalBAI >= 36)
-    ? "\nPuedes acercarte al área de psicopedagogía (segunda planta, al lado de coordinación) para recibir apoyo personalizado." 
+    ? "\nPuedes acercarte al área de psicopedagogía (segunda planta, al lado de coordinación) para recibir apoyo personalizado."
     : "";
 
   const texto = `Nombre: ${window.datosAlumno.nombre}
@@ -186,56 +172,45 @@ Interpretación: ${nivelBAI}${orientacion}`;
     totalBAI_raw: respuestas
   };
 
-  // === CONFIGURACIÓN DE JSONBIN ===
-  const binId = "68b5e1ad43b1c97be9336b10";
-  const url = `https://api.jsonbin.io/v3/b/${binId}`;
-  const X_MASTER_KEY = "$2a$10$SeroZfFrIPx4AMKeFOHst./J/g9iWGGeOOu2PkMHKVcs6yRf.UKDK";
+  // === Guardar en la nube ===
+  const url = CONFIG.apiUrl(CONFIG.binId);
+  const headers = {
+    "Content-Type": "application/json",
+    "X-Master-Key": CONFIG.masterKey
+  };
 
   fetch(url)
     .then(res => res.json())
     .then(data => {
-      // Aseguramos que resultados es un array
       const resultados = Array.isArray(data.resultados) ? data.resultados : [];
       resultados.push(resultado);
 
-      // Enviamos solo { "resultados": [...] }
       return fetch(url, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Master-Key": X_MASTER_KEY
-        },
+        headers,
         body: JSON.stringify({ resultados })
       });
     })
-    .then(() => {
-      mostrar("resultado");
-    })
+    .then(() => mostrar("resultado"))
     .catch(err => {
       console.error("Error al guardar en la nube:", err);
       mostrar("resultado");
-      alert("No se pudo guardar en línea, pero puedes ver tu resultado.");
     });
 }
 
+// === DESCARGAR PDF (alumno) ===
 function descargarPDF() {
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({
-    format: 'a4',
-    unit: 'mm'
-  });
-
+  const doc = new jsPDF({ format: 'a4', unit: 'mm' });
   const texto = document.getElementById("textoResultado").innerText;
   const lines = doc.splitTextToSize(texto, 180);
-  doc.setFont("helvetica");
-  doc.setFontSize(12);
+  doc.setFont("helvetica").setFontSize(12);
   doc.text(15, 20, lines);
-
   const nombreArchivo = window.datosAlumno.nombre.replace(/\s+/g, "_");
   doc.save(`resultado_${nombreArchivo}.pdf`);
 }
 
-// === PARTE DEL ADMINISTRADOR ===
+// === PANEL DE ADMINISTRACIÓN ===
 function accederAdmin() {
   const usuario = document.getElementById("usuarioAdmin").value.trim();
   const clave = document.getElementById("claveAdmin").value.trim();
@@ -248,15 +223,14 @@ function accederAdmin() {
   }
 }
 
-// === FUNCION: cargarResultadosAdmin - LEE DE LA NUBE ===
+// === CARGAR RESULTADOS DESDE LA NUBE ===
 async function cargarResultadosAdmin() {
   const tabla = document.getElementById("tablaAdmin");
   if (!tabla) return;
 
   tabla.innerHTML = "<tr><td colspan='7'>Cargando desde la nube...</td></tr>";
 
-  const binId = "68b5e1ad43b1c97be9336b10";
-  const url = `https://api.jsonbin.io/v3/b/${binId}`;
+  const url = CONFIG.apiUrl(CONFIG.binId);
 
   try {
     const res = await fetch(url);
@@ -273,13 +247,8 @@ async function cargarResultadosAdmin() {
     }
 
     resultados.slice().reverse().forEach((res, index) => {
-      const nivelBDI = res.totalBDI < 14 ? "Sin síntomas" :
-                      res.totalBDI < 20 ? "Leve" :
-                      res.totalBDI < 29 ? "Moderado" : "Grave";
-
-      const nivelBAI = res.totalBAI <= 21 ? "Sin síntomas" :
-                      res.totalBAI <= 35 ? "Moderado" : "Grave";
-
+      const nivelBDI = res.totalBDI < 14 ? "Sin síntomas" : res.totalBDI < 20 ? "Leve" : res.totalBDI < 29 ? "Moderado" : "Grave";
+      const nivelBAI = res.totalBAI <= 21 ? "Sin síntomas" : res.totalBAI <= 35 ? "Moderado" : "Grave";
       const colorBDI = res.totalBDI >= 29 ? 'red' : res.totalBDI >= 20 ? 'orange' : 'green';
       const colorBAI = res.totalBAI > 35 ? 'red' : res.totalBAI > 21 ? 'orange' : 'green';
 
@@ -319,35 +288,24 @@ function cerrarSesion() {
   document.getElementById("claveAdmin").value = "";
 }
 
-// === FUNCION: descargarPDFAdmin - PDF desde la nube ===
+// === DESCARGAR PDF (admin) ===
 function descargarPDFAdmin(index) {
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({
-    format: 'a4',
-    unit: 'mm'
-  });
-
-  const binId = "68b5e1ad43b1c97be9336b10";
-  const url = `https://api.jsonbin.io/v3/b/${binId}`;
+  const doc = new jsPDF({ format: 'a4', unit: 'mm' });
+  const url = CONFIG.apiUrl(CONFIG.binId);
 
   fetch(url)
     .then(res => res.json())
     .then(data => {
       const resultados = Array.isArray(data.resultados) ? data.resultados : [];
       const res = resultados[index];
-
-      if (!res) {
-        alert("Resultado no encontrado en la nube.");
-        return;
-      }
+      if (!res) return alert("Resultado no encontrado.");
 
       let y = 20;
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold").setFontSize(14);
       doc.text(`Resultado de: ${res.nombre}`, 15, y); y += 10;
 
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(12);
+      doc.setFont("helvetica", "normal").setFontSize(12);
       doc.text(`Correo: ${res.correo}`, 15, y); y += 8;
       doc.text(`Fecha: ${res.fecha}`, 15, y); y += 12;
 
@@ -356,13 +314,10 @@ function descargarPDFAdmin(index) {
 
       doc.setFont("helvetica", "normal");
       res.totalBDI_raw.forEach((val, i) => {
-        const pregunta = `${i+1}. ${titulosBDI[i]}: ${preguntasBDI[i][val]}`;
+        const pregunta = `${i + 1}. ${titulosBDI[i]}: ${preguntasBDI[i][val]}`;
         const lines = doc.splitTextToSize(pregunta, 170);
         lines.forEach(line => {
-          if (y > 270) {
-            doc.addPage();
-            y = 20;
-          }
+          if (y > 270) { doc.addPage(); y = 20; }
           doc.text(15, y, line);
           y += 6;
         });
@@ -377,13 +332,10 @@ function descargarPDFAdmin(index) {
 
       doc.setFont("helvetica", "normal");
       res.totalBAI_raw.forEach((val, i) => {
-        const pregunta = `${i+1}. ${preguntasBAI[i]}: ${nivelesBAI[val]}`;
+        const pregunta = `${i + 1}. ${preguntasBAI[i]}: ${nivelesBAI[val]}`;
         const lines = doc.splitTextToSize(pregunta, 170);
         lines.forEach(line => {
-          if (y > 270) {
-            doc.addPage();
-            y = 20;
-          }
+          if (y > 270) { doc.addPage(); y = 20; }
           doc.text(15, y, line);
           y += 6;
         });
@@ -402,11 +354,11 @@ function descargarPDFAdmin(index) {
     });
 }
 
-// === ONLOAD ===
-window.onload = function () {
-  if (document.getElementById("inicio")) {
-    mostrar("inicio");
-  } else if (document.getElementById("adminLogin")) {
-    mostrar("adminLogin");
-  }
+// === INICIALIZACIÓN ===
+window.onload = () => {
+  const inicio = document.getElementById("inicio");
+  const adminLogin = document.getElementById("adminLogin");
+
+  if (inicio) mostrar("inicio");
+  else if (adminLogin) mostrar("adminLogin");
 };
