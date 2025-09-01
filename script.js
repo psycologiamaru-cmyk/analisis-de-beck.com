@@ -142,6 +142,7 @@ function enviarBDI() {
   mostrar("evaluacionBAI");
 }
 
+// === FUNCIÓN MODIFICADA: enviarBAI - GUARDA EN JSONBIN ===
 function enviarBAI() {
   const respuestas = [];
   for (let i = 0; i < preguntasBAI.length; i++) {
@@ -157,7 +158,6 @@ function enviarBAI() {
   const nivelBDI = totalBDI < 14 ? "Depresión mínima" : totalBDI < 20 ? "Depresión leve" : totalBDI < 29 ? "Depresión moderada" : "Depresión severa";
   const nivelBAI = totalBAI <= 21 ? "Ansiedad muy baja" : totalBAI <= 35 ? "Ansiedad moderada" : "Ansiedad severa";
 
-  // Mensaje de orientación limpio, sin caracteres raros
   const orientacion = (totalBDI >= 20 || totalBAI >= 36)
     ? "\nPuedes acercarte al área de psicopedagogía (segunda planta, al lado de coordinación) para recibir apoyo personalizado." 
     : "";
@@ -185,11 +185,33 @@ Interpretación: ${nivelBAI}${orientacion}`;
     totalBAI,
     totalBAI_raw: respuestas
   };
-  const resultados = JSON.parse(localStorage.getItem("resultados") || "[]");
-  resultados.push(resultado);
-  localStorage.setItem("resultados", JSON.stringify(resultados));
 
-  mostrar("resultado");
+  // === GUARDAR EN JSONBIN (TU BASE DE DATOS) ===
+  const binId = "68b5e1ad43b1c97be9336b10"; // Tu Bin ID
+  const url = `https://api.jsonbin.io/v3/b/${binId}`;
+
+  fetch(url)
+    .then(res => res.json())
+    .then(data => {
+      const resultados = Array.isArray(data.record.resultados) ? data.record.resultados : [];
+      resultados.push(resultado);
+
+      return fetch(url, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ resultados })
+      });
+    })
+    .then(() => {
+      mostrar("resultado");
+    })
+    .catch(err => {
+      console.error("Error al guardar en JSONBin:", err);
+      mostrar("resultado");
+      alert("No se pudo guardar en línea, pero puedes ver tu resultado.");
+    });
 }
 
 function descargarPDF() {
@@ -222,44 +244,60 @@ function accederAdmin() {
   }
 }
 
-function cargarResultadosAdmin() {
+// === FUNCIÓN MODIFICADA: cargarResultadosAdmin - LEE DE JSONBIN ===
+async function cargarResultadosAdmin() {
   const tabla = document.getElementById("tablaAdmin");
   if (!tabla) return;
 
-  tabla.innerHTML = "";
-  const resultados = JSON.parse(localStorage.getItem("resultados") || "[]");
+  tabla.innerHTML = "<tr><td colspan='7'>Cargando datos desde servidor...</td></tr>";
 
-  if (resultados.length === 0) {
-    tabla.innerHTML = "<tr><td colspan='7'>No hay resultados registrados.</td></tr>";
-    return;
+  const binId = "68b5e1ad43b1c97be9336b10"; // Tu Bin ID
+  const url = `https://api.jsonbin.io/v3/b/${binId}`;
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("Servidor no responde");
+
+    const data = await res.json();
+    const resultados = Array.isArray(data.record.resultados) ? data.record.resultados : [];
+
+    tabla.innerHTML = "";
+
+    if (resultados.length === 0) {
+      tabla.innerHTML = "<tr><td colspan='7'>No hay resultados registrados.</td></tr>";
+      return;
+    }
+
+    resultados.slice().reverse().forEach((res, index) => {
+      const nivelBDI = res.totalBDI < 14 ? "Sin síntomas" :
+                      res.totalBDI < 20 ? "Leve" :
+                      res.totalBDI < 29 ? "Moderado" : "Grave";
+
+      const nivelBAI = res.totalBAI <= 21 ? "Sin síntomas" :
+                      res.totalBAI <= 35 ? "Moderado" : "Grave";
+
+      const colorBDI = res.totalBDI >= 29 ? 'red' : res.totalBDI >= 20 ? 'orange' : 'green';
+      const colorBAI = res.totalBAI > 35 ? 'red' : res.totalBAI > 21 ? 'orange' : 'green';
+
+      const fila = document.createElement("tr");
+      fila.innerHTML = `
+        <td>${res.nombre}</td>
+        <td>${res.correo}</td>
+        <td>${res.fecha}</td>
+        <td>${res.totalBAI} (${nivelBAI})</td>
+        <td>${res.totalBDI} (${nivelBDI})</td>
+        <td style="text-align: left; padding: 8px; font-size: 13px;">
+          <strong style="color: ${colorBDI};">Depresión:</strong> ${nivelBDI} (${res.totalBDI}/63)<br>
+          <strong style="color: ${colorBAI};">Ansiedad:</strong> ${nivelBAI} (${res.totalBAI}/66)
+        </td>
+        <td><button onclick="descargarPDFAdmin(${index})">PDF</button></td>
+      `;
+      tabla.appendChild(fila);
+    });
+  } catch (error) {
+    tabla.innerHTML = `<tr><td colspan='7'>Error al cargar: ${error.message}</td></tr>`;
+    console.error("Error al cargar desde JSONBin:", error);
   }
-
-  resultados.slice().reverse().forEach((res, index) => {
-    const nivelBDI = res.totalBDI < 14 ? "Sin síntomas" :
-                    res.totalBDI < 20 ? "Leve" :
-                    res.totalBDI < 29 ? "Moderado" : "Grave";
-
-    const nivelBAI = res.totalBAI <= 21 ? "Sin síntomas" :
-                    res.totalBAI <= 35 ? "Moderado" : "Grave";
-
-    const colorBDI = res.totalBDI >= 29 ? 'red' : res.totalBDI >= 20 ? 'orange' : 'green';
-    const colorBAI = res.totalBAI > 35 ? 'red' : res.totalBAI > 21 ? 'orange' : 'green';
-
-    const fila = document.createElement("tr");
-    fila.innerHTML = `
-      <td>${res.nombre}</td>
-      <td>${res.correo}</td>
-      <td>${res.fecha}</td>
-      <td>${res.totalBAI} (${nivelBAI})</td>
-      <td>${res.totalBDI} (${nivelBDI})</td>
-      <td style="text-align: left; padding: 8px; font-size: 13px;">
-        <strong style="color: ${colorBDI};">Depresión:</strong> ${nivelBDI} (${res.totalBDI}/63)<br>
-        <strong style="color: ${colorBAI};">Ansiedad:</strong> ${nivelBAI} (${res.totalBAI}/66)
-      </td>
-      <td><button onclick="descargarPDFAdmin(${index})">PDF</button></td>
-    `;
-    tabla.appendChild(fila);
-  });
 }
 
 function filtrarResultados() {
