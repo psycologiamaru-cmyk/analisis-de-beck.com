@@ -142,7 +142,7 @@ function enviarBDI() {
   mostrar("evaluacionBAI");
 }
 
-// === FUNCIÓN MODIFICADA: enviarBAI - GUARDA EN JSONBIN ===
+// === FUNCIÓN CORREGIDA: enviarBAI - GUARDA EN JSONBIN CON CLAVE ===
 function enviarBAI() {
   const respuestas = [];
   for (let i = 0; i < preguntasBAI.length; i++) {
@@ -186,29 +186,41 @@ Interpretación: ${nivelBAI}${orientacion}`;
     totalBAI_raw: respuestas
   };
 
-  // === GUARDAR EN JSONBIN (TU BASE DE DATOS) ===
-  const binId = "68b5e1ad43b1c97be9336b10"; // Tu Bin ID
+  // === CONFIGURACIÓN DE JSONBIN ===
+  const binId = "68b5e1ad43b1c97be9336b10";
   const url = `https://api.jsonbin.io/v3/b/${binId}`;
+  const X_MASTER_KEY = "$2a$10$SeroZfFrIPx4AMKeFOHst./J/g9iWGGeOOu2PkMHKVcs6yRf.UKDK"; // Tu clave
 
+  // Leer datos actuales
   fetch(url)
-    .then(res => res.json())
+    .then(res => {
+      if (!res.ok) throw new Error("Error de red o acceso");
+      return res.json();
+    })
     .then(data => {
       const resultados = Array.isArray(data.record.resultados) ? data.record.resultados : [];
       resultados.push(resultado);
 
+      // Guardar con cabecera de autenticación
       return fetch(url, {
         method: "PUT",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "X-Master-Key": X_MASTER_KEY
         },
         body: JSON.stringify({ resultados })
       });
     })
-    .then(() => {
+    .then(res => {
+      if (res.ok) {
+        console.log("✅ Éxito: Resultado guardado en JSONBin");
+      } else {
+        res.text().then(text => console.error("❌ Error en PUT:", text));
+      }
       mostrar("resultado");
     })
     .catch(err => {
-      console.error("Error al guardar en JSONBin:", err);
+      console.error("🚨 Error al conectar con JSONBin:", err);
       mostrar("resultado");
       alert("No se pudo guardar en línea, pero puedes ver tu resultado.");
     });
@@ -244,14 +256,14 @@ function accederAdmin() {
   }
 }
 
-// === FUNCIÓN MODIFICADA: cargarResultadosAdmin - LEE DE JSONBIN ===
+// === FUNCIÓN CORREGIDA: cargarResultadosAdmin - LEE DE JSONBIN ===
 async function cargarResultadosAdmin() {
   const tabla = document.getElementById("tablaAdmin");
   if (!tabla) return;
 
   tabla.innerHTML = "<tr><td colspan='7'>Cargando datos desde servidor...</td></tr>";
 
-  const binId = "68b5e1ad43b1c97be9336b10"; // Tu Bin ID
+  const binId = "68b5e1ad43b1c97be9336b10";
   const url = `https://api.jsonbin.io/v3/b/${binId}`;
 
   try {
