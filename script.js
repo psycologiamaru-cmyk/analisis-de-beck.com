@@ -1,3 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Evaluación Psicológica</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .question { margin: 15px 0; }
+    main > div { display: none; }
+    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    td, th { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background-color: #f4f4f4; }
+    button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+    input[type="text"], input[type="email"] { width: 100%; padding: 8px; margin: 8px 0; }
+  </style>
+</head>
+<body>
+
+<!-- === PÁGINA DE INICIO === -->
+<div id="inicio">
+  <h2>Inicio de Evaluación</h2>
+  <p>Ingresa tus datos para comenzar:</p>
+  <input type="text" id="nombreAlumno1" placeholder="Primer nombre" />
+  <input type="text" id="nombreAlumno2" placeholder="Segundo nombre (opcional)" />
+  <input type="text" id="apellidoAlumno1" placeholder="Primer apellido" />
+  <input type="text" id="apellidoAlumno2" placeholder="Segundo apellido (opcional)" />
+  <input type="email" id="correoAlumno" placeholder="Correo institucional" />
+  <button onclick="comenzar()">Comenzar Evaluación</button>
+</div>
+
+<!-- === EVALUACIÓN BDI === -->
+<div id="evaluacionBDI">
+  <h2>Inventario de Depresión de Beck (BDI)</h2>
+  <div id="preguntasBDI"></div>
+  <button onclick="enviarBDI()">Enviar BDI y continuar con BAI</button>
+</div>
+
+<!-- === EVALUACIÓN BAI === -->
+<div id="evaluacionBAI">
+  <h2>Inventario de Ansiedad de Beck (BAI)</h2>
+  <div id="preguntasBAI"></div>
+  <button onclick="enviarBAI()">Enviar Evaluación</button>
+</div>
+
+<!-- === RESULTADO FINAL === -->
+<div id="resultado">
+  <h2>Tu Resultado</h2>
+  <pre id="textoResultado"></pre>
+  <button onclick="descargarPDF()">Descargar PDF</button>
+  <button onclick="mostrar('inicio')">Volver al inicio</button>
+</div>
+
+<!-- === LOGIN ADMIN === -->
+<div id="adminLogin">
+  <h2>Acceso Administrador</h2>
+  <input type="text" id="usuarioAdmin" placeholder="Usuario" />
+  <input type="password" id="claveAdmin" placeholder="Contraseña" />
+  <button onclick="accederAdmin()">Ingresar</button>
+</div>
+
+<!-- === PANEL ADMIN === -->
+<div id="adminPanel">
+  <h2>Panel de Administración</h2>
+  <input type="text" id="buscadorAdmin" placeholder="Buscar..." oninput="filtrarResultados()" />
+  <table>
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Correo</th>
+        <th>Fecha</th>
+        <th>Ansiedad</th>
+        <th>Depresión</th>
+        <th>Detalles</th>
+        <th>PDF</th>
+      </tr>
+    </thead>
+    <tbody id="tablaAdmin"></tbody>
+  </table>
+  <button onclick="cerrarSesion()">Cerrar Sesión</button>
+</div>
+
+<script>
 // === PREGUNTAS Y TÍTULOS BDI ===
 const titulosBDI = [
   "Tristeza",
@@ -142,7 +226,7 @@ function enviarBDI() {
   mostrar("evaluacionBAI");
 }
 
-// === FUNCIÓN CORREGIDA: enviarBAI - GUARDA EN JSONBIN ===
+// === FUNCIÓN: enviarBAI - GUARDA EN LA NUBE (JSONBin) ===
 function enviarBAI() {
   const respuestas = [];
   for (let i = 0; i < preguntasBAI.length; i++) {
@@ -186,7 +270,7 @@ Interpretación: ${nivelBAI}${orientacion}`;
     totalBAI_raw: respuestas
   };
 
-  // === CONFIGURACIÓN FINAL ===
+  // === CONFIGURACIÓN - NUBE ===
   const binId = "68b5e1ad43b1c97be9336b10";
   const url = `https://api.jsonbin.io/v3/b/${binId}`;
   const X_MASTER_KEY = "$2a$10$SeroZfFrIPx4AMKeFOHst./J/g9iWGGeOOu2PkMHKVcs6yRf.UKDK";
@@ -194,11 +278,9 @@ Interpretación: ${nivelBAI}${orientacion}`;
   fetch(url)
     .then(res => res.json())
     .then(data => {
-      // Leer resultados del objeto "record"
       const resultados = Array.isArray(data.record?.resultados) ? data.record.resultados : [];
       resultados.push(resultado);
 
-      // Enviar con la misma estructura: { "record": { "resultados": [...] } }
       return fetch(url, {
         method: "PUT",
         headers: {
@@ -212,9 +294,9 @@ Interpretación: ${nivelBAI}${orientacion}`;
       mostrar("resultado");
     })
     .catch(err => {
-      console.error("Error al guardar:", err);
+      console.error("Error al guardar en la nube:", err);
       mostrar("resultado");
-      alert("No se pudo guardar en línea, pero puedes ver tu resultado.");
+      alert("No se pudo guardar en la nube, pero puedes ver tu resultado.");
     });
 }
 
@@ -248,19 +330,19 @@ function accederAdmin() {
   }
 }
 
-// === FUNCIÓN CORREGIDA: cargarResultadosAdmin - LEE DE JSONBIN ===
+// === FUNCION: cargarResultadosAdmin - LEE SOLO DE LA NUBE ===
 async function cargarResultadosAdmin() {
   const tabla = document.getElementById("tablaAdmin");
   if (!tabla) return;
 
-  tabla.innerHTML = "<tr><td colspan='7'>Cargando datos...</td></tr>";
+  tabla.innerHTML = "<tr><td colspan='7'>Cargando desde la nube...</td></tr>";
 
   const binId = "68b5e1ad43b1c97be9336b10";
   const url = `https://api.jsonbin.io/v3/b/${binId}`;
 
   try {
     const res = await fetch(url);
-    if (!res.ok) throw new Error("Error de red");
+    if (!res.ok) throw new Error("No se pudo conectar a la nube");
 
     const data = await res.json();
     const resultados = Array.isArray(data.record?.resultados) ? data.record.resultados : [];
@@ -294,13 +376,13 @@ async function cargarResultadosAdmin() {
           <strong style="color: ${colorBDI};">Depresión:</strong> ${nivelBDI} (${res.totalBDI}/63)<br>
           <strong style="color: ${colorBAI};">Ansiedad:</strong> ${nivelBAI} (${res.totalBAI}/66)
         </td>
-        <td><button onclick="descargarPDFAdmin(${index})">PDF</button></td>
+        <td><button onclick="descargarPDFAdmin(${resultados.indexOf(res)})">PDF</button></td>
       `;
       tabla.appendChild(fila);
     });
   } catch (error) {
     tabla.innerHTML = `<tr><td colspan='7'>Error: ${error.message}</td></tr>`;
-    console.error("Error al cargar:", error);
+    console.error("Error al cargar desde la nube:", error);
   }
 }
 
@@ -319,7 +401,7 @@ function cerrarSesion() {
   document.getElementById("claveAdmin").value = "";
 }
 
-// === CORREGIDO: descargarPDFAdmin - Lee desde JSONBin ===
+// === FUNCION: descargarPDFAdmin - PDF desde la nube ===
 function descargarPDFAdmin(index) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({
@@ -335,7 +417,11 @@ function descargarPDFAdmin(index) {
     .then(data => {
       const resultados = Array.isArray(data.record?.resultados) ? data.record.resultados : [];
       const res = resultados[index];
-      if (!res) return alert("Resultado no encontrado.");
+
+      if (!res) {
+        alert("Resultado no encontrado en la nube.");
+        return;
+      }
 
       let y = 20;
       doc.setFont("helvetica", "bold");
@@ -393,7 +479,7 @@ function descargarPDFAdmin(index) {
       doc.save(`resultado_${nombreArchivo}.pdf`);
     })
     .catch(err => {
-      alert("Error al cargar el resultado.");
+      alert("No se pudo cargar el resultado desde la nube.");
       console.error(err);
     });
 }
@@ -406,3 +492,7 @@ window.onload = function () {
     mostrar("adminLogin");
   }
 };
+</script>
+
+</body>
+</html>
