@@ -1,7 +1,7 @@
 // === CONFIGURACIÓN DE GITHUB ===
 const GITHUB_USER = "psycologiamaru-cmyk";           // Tu usuario de GitHub
-const GITHUB_REPO = "analisis-de-beck.com";           // Nombre de tu repositorio
-const GITHUB_FILE = "resultados.csv";        // Archivo CSV
+const GITHUB_REPO = "analisis-de-beck.com";         // Nombre de tu repositorio
+const GITHUB_FILE = "resultados.csv";               // Archivo CSV
 const GITHUB_TOKEN = "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"; // Tu token personal
 
 // URL pública para leer (jsDelivr)
@@ -156,18 +156,8 @@ Interpretación: ${nivelBAI}${orientacion}`;
 
   document.getElementById("textoResultado").textContent = texto;
 
-  const resultado = {
-    nombre: window.datosAlumno.nombre,
-    correo: window.datosAlumno.correo,
-    fecha: new Date().toLocaleString("es-ES"),
-    totalBDI,
-    totalBDI_raw: respuestasBDI,
-    totalBAI,
-    totalBAI_raw: respuestasBAI
-  };
-
   try {
-    // Intentar leer el archivo
+    // Intentar leer el archivo CSV desde GitHub
     const res = await fetch(URL_API, {
       headers: { 'Authorization': `token ${GITHUB_TOKEN}` }
     });
@@ -177,29 +167,30 @@ Interpretación: ${nivelBAI}${orientacion}`;
 
     if (res.ok) {
       const data = await res.json();
-      contenidoActual = atob(data.content);
+      contenidoActual = atob(data.content); // Decodificar de base64
       sha = data.sha;
     }
+    // Si no existe, se creará con el encabezado
 
-    // Crear fila CSV
+    // Crear nueva fila CSV
     const fila = [
-      `"${resultado.nombre.replace(/"/g, '""')}"`,
-      `"${resultado.correo.replace(/"/g, '""')}"`,
-      `"${resultado.fecha.replace(/"/g, '""')}"`,
-      resultado.totalBDI,
-      resultado.totalBAI,
-      `"${resultado.totalBDI_raw.join(';')}"`,
-      `"${resultado.totalBAI_raw.join(';')}"`
+      `"${window.datosAlumno.nombre.replace(/"/g, '""')}"`,
+      `"${window.datosAlumno.correo.replace(/"/g, '""')}"`,
+      `"${new Date().toLocaleString("es-ES").replace(/"/g, '""')}"`,
+      totalBDI,
+      totalBAI,
+      `"${respuestasBDI.join(';')}"`,
+      `"${respuestasBAI.join(';')}"`
     ].join(",");
 
     const nuevoContenido = contenidoActual + fila + "\n";
 
-    // Codificar correctamente
+    // Codificar a Base64 correctamente
     const encoder = new TextEncoder();
     const bytes = encoder.encode(nuevoContenido);
     const base64Content = btoa(String.fromCharCode(...bytes));
 
-    // Guardar en GitHub
+    // Guardar en GitHub (PUT)
     await fetch(URL_API, {
       method: 'PUT',
       headers: {
@@ -207,9 +198,9 @@ Interpretación: ${nivelBAI}${orientacion}`;
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        message: `Nuevo resultado: ${resultado.nombre}`,
+        message: `Nuevo resultado: ${window.datosAlumno.nombre}`,
         content: base64Content,
-        sha
+        sha // será undefined si es nuevo → GitHub lo crea
       })
     });
 
@@ -267,7 +258,7 @@ async function cargarResultadosAdmin() {
 
     filas.reverse().forEach(linea => {
       const campos = linea.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
-      if (campos.length < 5) return;
+      if (campos.length < 7) return;
 
       const [nombre, correo, fecha, totalBDI, totalBAI] = campos;
 
