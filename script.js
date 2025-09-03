@@ -1,15 +1,3 @@
-// === CONFIGURACIÓN DE GITHUB ===
-const GITHUB_USER = "psycologiamaru-cmyk";           // Tu usuario
-const GITHUB_REPO = "analisis-de-beck.com";         // Tu repositorio
-const GITHUB_FILE = "resultados.json";              // Archivo JSON
-const GITHUB_TOKEN = "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"; // Tu token
-
-// URL pública para leer (jsDelivr)
-const URL_PUBLICA = `https://cdn.jsdelivr.net/gh/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_FILE}`;
-
-// URL de la API para leer/escribir
-const URL_API = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${GITHUB_FILE}`;
-
 // === PREGUNTAS Y TÍTULOS BDI ===
 const titulosBDI = [
   "Tristeza", "Pesimismo", "Fracaso", "Pérdida de Placer", "Sentimientos de Culpa",
@@ -121,17 +109,18 @@ function enviarBDI() {
   mostrar("evaluacionBAI");
 }
 
-// === GUARDAR EN GITHUB (JSON) ===
+// === ENVIAR A GOOGLE SHEETS ===
 async function enviarBAI() {
-  const respuestasBAI = [];
+  const respuestas = [];
   for (let i = 0; i < preguntasBAI.length; i++) {
     const r = document.querySelector(`input[name='bai${i}']:checked`);
     if (!r) return alert("Completa todas las preguntas de ansiedad.");
-    respuestasBAI.push(parseInt(r.value));
+    respuestas.push(parseInt(r.value));
   }
+  window.respuestasBAI = respuestas;
 
   const totalBDI = respuestasBDI.reduce((a, b) => a + b, 0);
-  const totalBAI = respuestasBAI.reduce((a, b) => a + b, 0);
+  const totalBAI = respuestas.reduce((a, b) => a + b, 0);
 
   const nivelBDI = totalBDI < 14 ? "Depresión mínima" : totalBDI < 20 ? "Depresión leve" : totalBDI < 29 ? "Depresión moderada" : "Depresión severa";
   const nivelBAI = totalBAI <= 21 ? "Ansiedad muy baja" : totalBAI <= 35 ? "Ansiedad moderada" : "Ansiedad severa";
@@ -154,60 +143,31 @@ Interpretación: ${nivelBAI}${orientacion}`;
 
   document.getElementById("textoResultado").textContent = texto;
 
-  const resultado = {
+  // Enviar a Google Sheets
+  const datos = {
     nombre: window.datosAlumno.nombre,
     correo: window.datosAlumno.correo,
     fecha: new Date().toLocaleString("es-ES"),
     totalBDI,
-    totalBDI_raw: respuestasBDI,
     totalBAI,
-    totalBAI_raw: respuestasBAI
+    respuestasBDI: respuestasBDI,
+    respuestasBAI: respuestas
   };
 
-  try {
-    // Leer datos actuales
-    let resultados = [];
-    let sha = undefined;
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby0MZnKdI0V-j7XKXUhw71dvM7_6rgQ9Fy5mNnh3lvgKMfZAVwqDBW1_565UwfA97uTiQ/exec";
 
-    const res = await fetch(URL_API, {
-      headers: { 'Authorization': `token ${GITHUB_TOKEN}` }
-    });
+  fetch(APPS_SCRIPT_URL, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "text/plain" },
+    body: JSON.stringify(datos)
+  }).then(() => {
+    console.log("✅ Enviado a Google Sheets");
+  }).catch(err => {
+    console.warn("⚠️ Error al enviar:", err);
+  });
 
-    if (res.ok) {
-      const data = await res.json();
-      resultados = data.content ? JSON.parse(atob(data.content)) : { resultados: [] };
-      resultados = Array.isArray(resultados.resultados) ? resultados.resultados : [];
-      sha = data.sha;
-    }
-
-    // Añadir nuevo resultado
-    resultados.push(resultado);
-
-    // Codificar contenido
-    const content = JSON.stringify({ resultados }, null, 2);
-    const encoder = new TextEncoder();
-    const base64Content = btoa(String.fromCharCode(...encoder.encode(content)));
-
-    // Guardar en GitHub
-    await fetch(URL_API, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `token ${GITHUB_TOKEN}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        message: `Nuevo resultado: ${resultado.nombre}`,
-        content: base64Content,
-        sha
-      })
-    });
-
-    mostrar("resultado");
-  } catch (err) {
-    console.error("Error al guardar en GitHub:", err);
-    alert("No se pudo guardar en línea, pero puedes ver tu resultado.");
-    mostrar("resultado");
-  }
+  mostrar("resultado");
 }
 
 function descargarPDF() {
@@ -220,7 +180,7 @@ function descargarPDF() {
   doc.save(`resultado_${nombreArchivo}.pdf`);
 }
 
-// === ADMIN: CARGAR Y MOSTRAR ===
+// === ADMIN: CARGAR DESDE GOOGLE SHEETS ===
 async function accederAdmin() {
   const usuario = document.getElementById("usuarioAdmin").value.trim();
   const clave = document.getElementById("claveAdmin").value.trim();
@@ -235,11 +195,14 @@ async function accederAdmin() {
 
 async function cargarResultadosAdmin() {
   const tabla = document.getElementById("tablaAdmin");
-  tabla.innerHTML = "<tr><td colspan='7'>Cargando desde GitHub...</td></tr>";
+  tabla.innerHTML = "<tr><td colspan='7'>Cargando desde Google Sheets...</td></tr>";
 
   try {
-    const response = await fetch(URL_PUBLICA);
-    if (!response.ok) throw new Error("No se pudo cargar");
+    // Usa la misma URL de tu Web App, pero con GET
+    const URL_SHEET = "https://script.google.com/macros/s/AKfycby0MZnKdI0V-j7XKXUhw71dvM7_6rgQ9Fy5mNnh3lvgKMfZAVwqDBW1_565UwfA97uTiQ/exec";
+
+    const response = await fetch(URL_SHEET);
+    if (!response.ok) throw new Error("Error de red");
 
     const data = await response.json();
     const resultados = Array.isArray(data.resultados) ? data.resultados : [];
@@ -270,16 +233,17 @@ async function cargarResultadosAdmin() {
         <td>${res.totalBAI} (${nivelBAI})</td>
         <td>${res.totalBDI} (${nivelBDI})</td>
         <td style="text-align: left; padding: 8px; font-size: 13px;">
-          <strong style="color: ${colorBDI};">Depresión:</strong> ${nivelBDI} (${res.totalBDI}/84)<br>
+          <strong style="color: ${colorBDI};">Depresión:</strong> ${nivelBDI} (${res.totalBDI}/63)<br>
           <strong style="color: ${colorBAI};">Ansiedad:</strong> ${nivelBAI} (${res.totalBAI}/66)
         </td>
         <td><button onclick="alert('El usuario descarga su PDF al finalizar')">PDF</button></td>
       `;
       tabla.appendChild(fila);
     });
+
   } catch (err) {
-    tabla.innerHTML = "<tr><td colspan='7'>Error al cargar datos.</td></tr>";
-    console.error("Error:", err);
+    tabla.innerHTML = "<tr><td colspan='7'>Error al cargar desde Google Sheets.</td></tr>";
+    console.error("Error al cargar desde Sheet:", err);
   }
 }
 
