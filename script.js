@@ -1,3 +1,6 @@
+// === URL de tu Web App de Google Apps Script ===
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzOrbVwK3TD2RuH8z_-_RnLuWDpVUyx_HLcD1AuZA8fQ6OWlXFld0iwyJ4-oGDPoXti/exec";
+
 // === PREGUNTAS Y TÍTULOS BDI ===
 const titulosBDI = [
   "Tristeza", "Pesimismo", "Fracaso", "Pérdida de Placer", "Sentimientos de Culpa",
@@ -26,10 +29,7 @@ const preguntasBDI = [
   ["Tengo tanta energía como siempre.", "Tengo menos energía que la que solía tener.", "No tengo suficiente energía para hacer demasiado.", "No tengo energía suficiente para hacer nada."],
   ["No he experimentado ningún cambio en mis hábitos de sueño.", "Duermo un poco más o menos que lo habitual.", "Duermo mucho más o mucho menos que lo habitual.", "Duermo la mayor parte del día o me despierto muy temprano y no puedo volver a dormir."],
   ["No estoy más irritable que lo habitual.", "Estoy más irritable que lo habitual.", "Estoy mucho más irritable que lo habitual.", "Estoy irritable todo el tiempo."],
-  ["No he experimentado ningún cambio en mi apetito.", "Mi apetito es un poco menor o mayor que lo habitual.", "Mi apetito es mucho menor o mayor que lo habitual.", "No tengo apetito en absoluto o quiero comer todo el día."],
-  ["Puedo concentrarme tan bien como siempre.", "No puedo concentrarme tan bien como habitualmente.", "Me es difícil mantener la mente en algo por mucho tiempo.", "Encuentro que no puedo concentrarme en nada."],
-  ["No estoy más cansado o fatigado que lo habitual.", "Me fatigo o me canso más fácilmente que lo habitual.", "Estoy demasiado fatigado para hacer muchas cosas.", "Estoy demasiado fatigado para hacer la mayoría de las cosas que solía hacer."],
-  ["No he notado ningún cambio reciente en mi interés por el sexo.", "Estoy menos interesado en el sexo de lo que solía estarlo.", "Estoy mucho menos interesado en el sexo.", "He perdido completamente el interés en el sexo."]
+  ["No he experimentado ningún cambio en mi apetito.", "Mi apetito es un poco menor o mayor que lo habitual.", "Mi apetito es mucho menor o mayor que lo habitual.", "No tengo apetito en absoluto o quiero comer todo el día."]
 ];
 
 // === PREGUNTAS BAI ===
@@ -60,11 +60,11 @@ function comenzar() {
 
   if (!nombre1) return alert("Por favor ingresa tu primer nombre.");
   if (!apellido1) return alert("Por favor ingresa tu primer apellido.");
-  if (!correo || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) return alert("Correo inválido.");
+  if (!correo || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) return alert("Por favor ingresa un correo válido.");
 
-  window.datosAlumno = {
+  window.datosAlumno = { 
     nombre: `${nombre1} ${nombre2} ${apellido1} ${apellido2}`.replace(/\s+/g, ' ').trim(),
-    correo
+    correo: correo 
   };
 
   cargarPreguntasBDI();
@@ -126,7 +126,7 @@ async function enviarBAI() {
   const nivelBAI = totalBAI <= 21 ? "Ansiedad muy baja" : totalBAI <= 35 ? "Ansiedad moderada" : "Ansiedad severa";
 
   const orientacion = (totalBDI >= 20 || totalBAI >= 36)
-    ? "\nPuedes acercarte al área de psicopedagogía (primer edificio, primer piso, lado derecho, al lado de coordinación) para recibir apoyo personalizado."
+    ? "\nPuedes acercarte al área de psicopedagogía (segunda planta, al lado de coordinación) para recibir apoyo personalizado." 
     : "";
 
   const texto = `Nombre: ${window.datosAlumno.nombre}
@@ -143,7 +143,7 @@ Interpretación: ${nivelBAI}${orientacion}`;
 
   document.getElementById("textoResultado").textContent = texto;
 
-  // Enviar a Google Sheets
+  // === DATOS A ENVIAR ===
   const datos = {
     nombre: window.datosAlumno.nombre,
     correo: window.datosAlumno.correo,
@@ -154,18 +154,17 @@ Interpretación: ${nivelBAI}${orientacion}`;
     respuestasBAI: respuestas
   };
 
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby0MZnKdI0V-j7XKXUhw71dvM7_6rgQ9Fy5mNnh3lvgKMfZAVwqDBW1_565UwfA97uTiQ/exec";
-
-  fetch(APPS_SCRIPT_URL, {
-    method: "POST",
-    mode: "no-cors",
-    headers: { "Content-Type": "text/plain" },
-    body: JSON.stringify(datos)
-  }).then(() => {
+  try {
+    await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify(datos)
+    });
     console.log("✅ Enviado a Google Sheets");
-  }).catch(err => {
+  } catch (err) {
     console.warn("⚠️ Error al enviar:", err);
-  });
+  }
 
   mostrar("resultado");
 }
@@ -180,7 +179,7 @@ function descargarPDF() {
   doc.save(`resultado_${nombreArchivo}.pdf`);
 }
 
-// === ADMIN: CARGAR DESDE GOOGLE SHEETS ===
+// === ADMIN: CARGAR RESULTADOS ===
 async function accederAdmin() {
   const usuario = document.getElementById("usuarioAdmin").value.trim();
   const clave = document.getElementById("claveAdmin").value.trim();
@@ -198,12 +197,7 @@ async function cargarResultadosAdmin() {
   tabla.innerHTML = "<tr><td colspan='7'>Cargando desde Google Sheets...</td></tr>";
 
   try {
-    // Usa la misma URL de tu Web App, pero con GET
-    const URL_SHEET = "https://script.google.com/macros/s/AKfycby0MZnKdI0V-j7XKXUhw71dvM7_6rgQ9Fy5mNnh3lvgKMfZAVwqDBW1_565UwfA97uTiQ/exec";
-
-    const response = await fetch(URL_SHEET);
-    if (!response.ok) throw new Error("Error de red");
-
+    const response = await fetch(APPS_SCRIPT_URL);
     const data = await response.json();
     const resultados = Array.isArray(data.resultados) ? data.resultados : [];
 
@@ -242,7 +236,7 @@ async function cargarResultadosAdmin() {
     });
 
   } catch (err) {
-    tabla.innerHTML = "<tr><td colspan='7'>Error al cargar desde Google Sheets.</td></tr>";
+    tabla.innerHTML = "<tr><td colspan='7'>Error al cargar datos. Verifica la conexión.</td></tr>";
     console.error("Error al cargar desde Sheet:", err);
   }
 }
@@ -261,7 +255,10 @@ function cerrarSesion() {
 }
 
 // === ONLOAD ===
-window.onload = () => {
-  if (document.getElementById("inicio")) mostrar("inicio");
-  else if (document.getElementById("adminLogin")) mostrar("adminLogin");
+window.onload = function () {
+  const inicio = document.getElementById("inicio");
+  const adminLogin = document.getElementById("adminLogin");
+  
+  if (inicio) mostrar("inicio");
+  else if (adminLogin) mostrar("adminLogin");
 };
